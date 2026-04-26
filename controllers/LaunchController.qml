@@ -7,8 +7,50 @@ Item {
     property bool blocked: false
     property bool animating: false
     property var pendingGame: null
+    property var allGamesModel: null
 
     readonly property alias sourceHidden: animationLayer.sourceHidden
+
+    function sameGame(left, right) {
+        if (!left || !right)
+            return false
+
+        if (left.title !== right.title)
+            return false
+
+        if (left.sortBy !== undefined && right.sortBy !== undefined && left.sortBy !== right.sortBy)
+            return false
+
+        if (left.file !== undefined && right.file !== undefined)
+            return left.file === right.file
+
+        return true
+    }
+
+    function originalGameFor(game) {
+        if (!game)
+            return null
+
+        if (typeof game.launch === "function")
+            return game
+
+        if (!allGamesModel || !allGamesModel.count || !allGamesModel.get)
+            return null
+
+        for (var i = 0; i < allGamesModel.count; ++i) {
+            var candidate = allGamesModel.get(i)
+            if (sameGame(game, candidate) && typeof candidate.launch === "function")
+                return candidate
+        }
+
+        return null
+    }
+
+    function launchPendingGame() {
+        var game = originalGameFor(pendingGame)
+        if (game)
+            game.launch()
+    }
 
     function startLaunch(game, sourceItem, fallbackWidth, fallbackHeight) {
         if (!game)
@@ -51,10 +93,7 @@ Item {
         id: launchDelayTimer
         interval: 420
         repeat: false
-        onTriggered: {
-            if (root.pendingGame)
-                root.pendingGame.launch()
-        }
+        onTriggered: root.launchPendingGame()
     }
 
     Timer {

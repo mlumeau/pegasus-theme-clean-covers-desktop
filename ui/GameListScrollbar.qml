@@ -28,21 +28,5 @@ Item {
         height: vertical ? thumbLength : parent.height
         radius: vertical ? width / 2 : height / 2
         color: thumbColor
-
-        Behavior on x {
-            enabled: !vertical
-            NumberAnimation {
-                duration: 140
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Behavior on y {
-            enabled: vertical
-            NumberAnimation {
-                duration: 140
-                easing.type: Easing.OutCubic
-            }
-        }
     }
 }

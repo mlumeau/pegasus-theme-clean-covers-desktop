@@ -5,7 +5,6 @@ Item {
 
     property bool optionsOpen: false
     property bool launchAnimating: false
-    property bool cancelPressedInOptions: false
 
     signal closeOptionsRequested()
     signal toggleOptionsRequested()
@@ -22,31 +21,31 @@ Item {
             return
         }
 
-        if (optionsOpen && api.keys.isCancel(event)) {
+        if (optionsOpen && event.key === Qt.Key_Escape) {
             event.accepted = true
             closeOptionsRequested()
             return
         }
 
-        if (event.key === Qt.Key_Y || api.keys.isFilters(event)) {
+        if (event.key === Qt.Key_O || event.key === Qt.Key_F1) {
             event.accepted = true
             toggleOptionsRequested()
             return
         }
 
-        if (event.key === Qt.Key_X || api.keys.isDetails(event)) {
+        if (event.key === Qt.Key_S) {
             event.accepted = true
             cycleSortRequested()
             return
         }
 
-        if (!optionsOpen && api.keys.isPrevPage(event)) {
+        if (!optionsOpen && event.key === Qt.Key_PageUp) {
             event.accepted = true
             cycleCollectionRequested(-1)
             return
         }
 
-        if (!optionsOpen && api.keys.isNextPage(event)) {
+        if (!optionsOpen && event.key === Qt.Key_PageDown) {
             event.accepted = true
             cycleCollectionRequested(1)
             return
@@ -99,7 +98,7 @@ Item {
     }
 
     Keys.onReleased: {
-        if (api.keys.isAccept(event) || event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Select) {
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             event.accepted = true
             if (launchAnimating || optionsOpen)
                 return
@@ -113,7 +112,7 @@ Item {
             return
         }
 
-        if (optionsOpen && api.keys.isCancel(event)) {
+        if (optionsOpen && event.key === Qt.Key_Escape) {
             event.accepted = true
         }
     }

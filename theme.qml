@@ -59,6 +59,7 @@ FocusScope {
         id: launchController
         anchors.fill: parent
         z: 80
+        allGamesModel: api.allGames
     }
 
     State.ThemeActions {
@@ -85,12 +86,10 @@ FocusScope {
         id: optionsController
         sortMode: state.sortMode
         sortAscending: state.sortAscending
-        layoutMode: state.layoutMode
         bgBlur: state.bgBlur
         bgDark: state.bgDark
         bgFallbackColor: state.bgFallbackColor
         bgMotionEnabled: state.bgMotionEnabled
-        showHints: state.showHints
         gameListScrollbarEnabled: state.gameListScrollbarEnabled
         soundEnabled: state.soundEnabled
         fallbackColors: state.fallbackColors
@@ -100,12 +99,10 @@ FocusScope {
         onClosed: audio.playBack()
         onNavigateRequested: audio.playNav()
         onCycleSortRequested: actions.cycleSort(step)
-        onCycleLayoutRequested: actions.cycleLayout(step)
         onAdjustBlurRequested: actions.adjustBlur(step)
         onAdjustDarkRequested: actions.adjustDark(step)
         onCycleFallbackColorRequested: actions.cycleFallbackColor(step)
         onToggleMotionRequested: actions.toggleMotion()
-        onToggleHintsRequested: actions.toggleHints()
         onToggleGameListScrollbarRequested: actions.toggleGameListScrollbar()
         onToggleSoundRequested: actions.toggleSound()
     }
@@ -113,9 +110,8 @@ FocusScope {
     Browser.GameBrowser {
         id: browser
         anchors.fill: parent
-        layoutMode: state.layoutMode
-        showHints: state.showHints
         gameListScrollbarEnabled: state.gameListScrollbarEnabled
+        mouseEnabled: !optionsController.open
         gamesModel: sortedGames
         collectionName: collections.currentName
         bgFallbackColor: state.bgFallbackColor
@@ -124,13 +120,8 @@ FocusScope {
         colorTextMuted: palette.textMuted
         colorTextInactive: palette.textInactive
         colorTextPlaceholder: palette.textPlaceholder
-        colorTextPlaceholderMeta: palette.textPlaceholderMeta
         colorTextSort: palette.textSort
-        colorTextHints: palette.textHints
         colorCardBase: palette.cardBase
-        colorPanelHints: palette.panelHints
-        colorBorderHints: palette.borderHints
-        controllerHintItems: state.controllerHintItems
         sortMode: state.sortMode
         sortAscending: state.sortAscending
         condensedFontFamily: global.fonts.condensed
@@ -141,8 +132,11 @@ FocusScope {
         onNavigateRequested: audio.playNav()
         onLaunchRequested: actions.launchCurrent()
         onFocusRequested: root.forceActiveFocus()
+        onCycleCollectionRequested: function(step) { actions.cycleCollection(step) }
+        onCycleSortRequested: actions.cycleSort(1)
+        onOptionsRequested: optionsController.openMenu()
         onCurrentIndexChanged: {
-            if ((layoutMode === 0 || layoutMode === 1) && visible)
+            if (visible)
                 motionController.restart()
         }
     }
@@ -158,12 +152,14 @@ FocusScope {
         panelTextMuted: palette.textMuted
         condensedFontFamily: global.fonts.condensed
         sansFontFamily: global.fonts.sans
-        hintItems: state.modalHintItems
         currentIndex: optionsController.currentIndex
         rowCount: optionsController.optionCount()
         menuLabelFn: optionsController.menuLabel
         menuValueFn: optionsController.menuValue
         rootHeight: root.height
+        onCloseRequested: optionsController.closeMenu()
+        onCurrentIndexRequested: function(index) { optionsController.setCurrent(index) }
+        onOptionAdjustRequested: function(index, step) { optionsController.adjustIndex(index, step) }
     }
 
     Controllers.InputRouter {
@@ -192,7 +188,6 @@ FocusScope {
     Connections {
         target: state
         function onSortModeChanged() { motionController.restart() }
-        function onLayoutModeChanged() { motionController.restart() }
     }
 
     Component.onCompleted: bootstrap.initialize()

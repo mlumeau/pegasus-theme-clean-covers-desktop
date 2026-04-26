@@ -9,12 +9,10 @@ Item {
 
     property int sortMode: 0
     property bool sortAscending: false
-    property int layoutMode: 0
     property real bgBlur: 18
     property real bgDark: 0.35
     property color bgFallbackColor: "#2a2d32"
     property bool bgMotionEnabled: true
-    property bool showHints: true
     property bool gameListScrollbarEnabled: true
     property bool soundEnabled: true
     property var fallbackColors: []
@@ -26,12 +24,10 @@ Item {
     signal closed()
     signal navigateRequested()
     signal cycleSortRequested(int step)
-    signal cycleLayoutRequested(int step)
     signal adjustBlurRequested(real step)
     signal adjustDarkRequested(real step)
     signal cycleFallbackColorRequested(int step)
     signal toggleMotionRequested()
-    signal toggleHintsRequested()
     signal toggleGameListScrollbarRequested()
     signal toggleSoundRequested()
 
@@ -42,12 +38,10 @@ Item {
         return ThemeOptions.menuValue(index, {
             sortMode: sortMode,
             sortAscending: sortAscending,
-            layoutMode: layoutMode,
             bgBlur: bgBlur,
             bgDark: bgDark,
             bgFallbackColor: bgFallbackColor,
             bgMotionEnabled: bgMotionEnabled,
-            showHints: showHints,
             gameListScrollbarEnabled: gameListScrollbarEnabled,
             soundEnabled: soundEnabled,
             fallbackColors: fallbackColors
@@ -73,17 +67,28 @@ Item {
         navigateRequested()
     }
 
+    function setCurrent(index) {
+        var next = Math.max(0, Math.min(index, optionCount() - 1))
+        if (next === currentIndex)
+            return
+        currentIndex = next
+        navigateRequested()
+    }
+
     function adjustCurrent(step) {
+        adjustIndex(currentIndex, step)
+    }
+
+    function adjustIndex(index, step) {
+        currentIndex = Math.max(0, Math.min(index, optionCount() - 1))
         switch (currentIndex) {
             case 0: cycleSortRequested(step); break
-            case 1: cycleLayoutRequested(step); break
-            case 2: adjustBlurRequested(step * 2); break
-            case 3: adjustDarkRequested(step * 0.05); break
-            case 4: cycleFallbackColorRequested(step); break
-            case 5: if (step !== 0) toggleMotionRequested(); break
-            case 6: if (step !== 0) toggleHintsRequested(); break
-            case 7: if (step !== 0) toggleGameListScrollbarRequested(); break
-            case 8: if (step !== 0) toggleSoundRequested(); break
+            case 1: adjustBlurRequested(step * 2); break
+            case 2: adjustDarkRequested(step * 0.05); break
+            case 3: cycleFallbackColorRequested(step); break
+            case 4: if (step !== 0) toggleMotionRequested(); break
+            case 5: if (step !== 0) toggleGameListScrollbarRequested(); break
+            case 6: if (step !== 0) toggleSoundRequested(); break
         }
     }
 }

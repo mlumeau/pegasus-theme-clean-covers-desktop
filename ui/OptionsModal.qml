@@ -8,14 +8,17 @@ Item {
     property color panelTextMuted: "#92ffffff"
     property string condensedFontFamily: ""
     property string sansFontFamily: ""
-    property var hintItems: []
     property int currentIndex: 0
     property int rowCount: 0
     property var menuLabelFn
     property var menuValueFn
     property real rootHeight: 1080
-    readonly property real outerMargin: Math.max(12, Math.round(rootHeight * 0.018))
-    readonly property real rowHeight: Math.round(rootHeight * 0.054)
+    readonly property real outerMargin: 20
+    readonly property real rowHeight: 58
+
+    signal closeRequested()
+    signal currentIndexRequested(int index)
+    signal optionAdjustRequested(int index, int step)
 
     function ensureCurrentVisible() {
         var targetY = currentIndex * (rowHeight + optionsColumn.spacing)
@@ -33,11 +36,24 @@ Item {
         color: overlayColor
     }
 
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
+        onClicked: closeRequested()
+    }
+
     Item {
         id: panel
         anchors.centerIn: parent
         width: Math.min(Math.round(parent.width - outerMargin * 2), Math.max(420, Math.round(parent.width * 0.42)))
         height: Math.min(Math.round(parent.height - outerMargin * 2), Math.round(parent.height * 0.68))
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            onClicked: mouse.accepted = true
+            onWheel: wheel.accepted = true
+        }
 
         Rectangle {
             id: panelShell
@@ -70,72 +86,16 @@ Item {
 
             Item {
                 width: parent.width
-                height: titleText.height + modalHintRow.height + 18
+                height: titleText.height
 
-                Column {
+                Text {
+                    id: titleText
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    spacing: 6
-
-                    Text {
-                        id: titleText
-                        text: "Options"
-                        color: panelTextPrimary
-                        font.family: condensedFontFamily
-                        font.pixelSize: Math.round(rootHeight * 0.04)
-                    }
-
-                    Row {
-                        id: modalHintRow
-                        spacing: 14
-
-                        Repeater {
-                            model: hintItems
-
-                            delegate: Row {
-                                property var iconList: modelData.icons ? modelData.icons : (modelData.icon ? [modelData.icon] : [])
-                                spacing: 6
-
-                                Row {
-                                    spacing: 4
-
-                                    Repeater {
-                                        model: iconList
-
-                                        delegate: Row {
-                                            spacing: 4
-
-                                            Image {
-                                                source: modelData
-                                                width: Math.round(rootHeight * 0.022)
-                                                height: width
-                                                fillMode: Image.PreserveAspectFit
-                                                smooth: true
-                                                asynchronous: true
-                                            }
-
-                                            Text {
-                                                visible: index < iconList.length - 1
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: "/"
-                                                color: panelTextMuted
-                                                font.family: sansFontFamily
-                                                font.pixelSize: Math.round(rootHeight * 0.015)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: modelData.label
-                                    color: panelTextMuted
-                                    font.family: sansFontFamily
-                                    font.pixelSize: Math.round(rootHeight * 0.016)
-                                }
-                            }
-                        }
-                    }
+                    text: "Options"
+                    color: panelTextPrimary
+                    font.family: condensedFontFamily
+                    font.pixelSize: 42
                 }
             }
 
@@ -195,6 +155,15 @@ Item {
                                 border.color: index === currentIndex ? "#30ffffff" : "transparent"
                             }
 
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton
+                                onEntered: currentIndexRequested(index)
+                                onClicked: currentIndexRequested(index)
+                                onWheel: wheel.accepted = false
+                            }
+
                             Item {
                                 anchors.fill: optionRow
                                 anchors.leftMargin: 12
@@ -207,9 +176,9 @@ Item {
                                     width: parent.width * 0.08
                                     horizontalAlignment: Text.AlignRight
                                     text: ">"
-                                    color: index === currentIndex ? panelTextPrimary : panelTextMuted
+                                    color: rightArrowMouse.containsMouse || index === currentIndex ? panelTextPrimary : panelTextMuted
                                     font.family: sansFontFamily
-                                    font.pixelSize: Math.round(rootHeight * 0.018)
+                                    font.pixelSize: 19
                                 }
 
                                 Text {
@@ -222,7 +191,7 @@ Item {
                                     text: menuValueFn ? menuValueFn(index) : ""
                                     color: index === currentIndex ? panelTextSecondary : panelTextMuted
                                     font.family: sansFontFamily
-                                    font.pixelSize: Math.round(rootHeight * 0.018)
+                                    font.pixelSize: 19
                                     elide: Text.ElideRight
                                 }
 
@@ -234,9 +203,9 @@ Item {
                                     width: parent.width * 0.08
                                     horizontalAlignment: Text.AlignLeft
                                     text: "<"
-                                    color: index === currentIndex ? panelTextPrimary : panelTextMuted
+                                    color: leftArrowMouse.containsMouse || index === currentIndex ? panelTextPrimary : panelTextMuted
                                     font.family: sansFontFamily
-                                    font.pixelSize: Math.round(rootHeight * 0.018)
+                                    font.pixelSize: 19
                                 }
 
                                 Text {
@@ -247,8 +216,36 @@ Item {
                                     text: menuLabelFn ? menuLabelFn(index) : ""
                                     color: index === currentIndex ? panelTextPrimary : panelTextSecondary
                                     font.family: sansFontFamily
-                                    font.pixelSize: Math.round(rootHeight * 0.019)
+                                    font.pixelSize: 20
                                     elide: Text.ElideRight
+                                }
+
+                                MouseArea {
+                                    id: leftArrowMouse
+                                    anchors.fill: optionSelectorLeft
+                                    anchors.margins: -8
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton
+                                    onEntered: currentIndexRequested(index)
+                                    onClicked: {
+                                        currentIndexRequested(index)
+                                        optionAdjustRequested(index, -1)
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: rightArrowMouse
+                                    anchors.fill: optionSelectorRight
+                                    anchors.margins: -8
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton
+                                    onEntered: currentIndexRequested(index)
+                                    onClicked: {
+                                        currentIndexRequested(index)
+                                        optionAdjustRequested(index, 1)
+                                    }
                                 }
                             }
                         }
@@ -285,7 +282,7 @@ Item {
             anchors.leftMargin: 20
             anchors.rightMargin: 20
             anchors.bottomMargin: 14
-            height: Math.round(rootHeight * 0.054)
+            height: 58
 
             Item {
                 anchors.right: parent.right
@@ -296,32 +293,27 @@ Item {
                 Rectangle {
                     anchors.fill: parent
                     radius: 7
-                    color: "transparent"
+                    color: closeMouse.containsMouse ? "#16ffffff" : "transparent"
                     border.width: 1
-                    border.color: "#14ffffff"
+                    border.color: closeMouse.containsMouse ? "#30ffffff" : "#14ffffff"
                 }
 
-                Row {
+                Text {
                     id: closeButtonContent
                     anchors.centerIn: parent
-                    spacing: 12
+                    text: "Close"
+                    color: panelTextMuted
+                    font.family: sansFontFamily
+                    font.pixelSize: 18
+                }
 
-                    Image {
-                        source: "../assets/controller/face-east.svg"
-                        width: Math.round(rootHeight * 0.024)
-                        height: width
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                        asynchronous: true
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "Close"
-                        color: panelTextMuted
-                        font.family: sansFontFamily
-                        font.pixelSize: Math.round(rootHeight * 0.017)
-                    }
+                MouseArea {
+                    id: closeMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: closeRequested()
                 }
             }
         }

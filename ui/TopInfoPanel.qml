@@ -10,12 +10,15 @@ Column {
     property color metaColor: "#92ffffff"
     property string condensedFontFamily: ""
     property string sansFontFamily: ""
-    property real rootHeight: 1080
+    property int titlePixelSize: 60
+    property int secondaryPixelSize: 22
+    property int metaPixelSize: 18
+    readonly property real titleVerticalCenter: titleItem.y + titleItem.height * 0.5
 
     spacing: 0
 
     Item {
-        width: parent.width * 0.74
+        width: parent.width
         height: titleItem.height
 
         DropShadow {
@@ -33,15 +36,44 @@ Column {
             text: parent.parent.titleValue
             color: parent.parent.titleColor
             font.family: parent.parent.condensedFontFamily
-            font.pixelSize: Math.round(parent.parent.rootHeight * 0.06)
+            font.pixelSize: parent.parent.titlePixelSize
             elide: Text.ElideRight
             width: parent.width
         }
     }
 
     Item {
-        width: parent.width * 0.74
-        height: secondaryItem.height
+        width: parent.width
+        height: metaItem.height
+
+        DropShadow {
+            visible: metaItem.text !== ""
+            anchors.fill: metaItem
+            source: metaItem
+            horizontalOffset: 0
+            verticalOffset: 2
+            radius: 5
+            samples: 11
+            color: "#38000000"
+        }
+
+        Text {
+            id: metaItem
+            visible: text !== ""
+            text: parent.parent.metaValue
+            color: parent.parent.metaColor
+            font.family: parent.parent.sansFontFamily
+            font.pixelSize: parent.parent.metaPixelSize
+            elide: Text.ElideRight
+            width: parent.width
+            height: parent.parent.metaPixelSize + 2
+        }
+    }
+
+    Item {
+        width: parent.width
+        height: secondaryItem.text !== "" ? secondaryItem.height : 0
+        visible: secondaryItem.text !== ""
 
         DropShadow {
             anchors.fill: secondaryItem
@@ -58,35 +90,9 @@ Column {
             text: parent.parent.secondaryValue
             color: parent.parent.secondaryColor
             font.family: parent.parent.sansFontFamily
-            font.pixelSize: Math.round(parent.parent.rootHeight * 0.022)
+            font.pixelSize: parent.parent.secondaryPixelSize
             elide: Text.ElideRight
             width: parent.width
-        }
-    }
-
-    Item {
-        width: parent.width * 0.9
-        height: metaItem.height
-
-        DropShadow {
-            anchors.fill: metaItem
-            source: metaItem
-            horizontalOffset: 0
-            verticalOffset: 2
-            radius: 5
-            samples: 11
-            color: "#38000000"
-        }
-
-        Text {
-            id: metaItem
-            text: parent.parent.metaValue
-            color: parent.parent.metaColor
-            font.family: parent.parent.sansFontFamily
-            font.pixelSize: Math.round(parent.parent.rootHeight * 0.018)
-            elide: Text.ElideRight
-            width: parent.width
-            height: Math.round(parent.parent.rootHeight * 0.024)
         }
     }
 }

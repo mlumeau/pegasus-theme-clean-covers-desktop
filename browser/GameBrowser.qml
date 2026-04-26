@@ -6,9 +6,8 @@ import "../ui" as UI
 Item {
     id: root
 
-    property int layoutMode: 0
-    property bool showHints: true
     property bool gameListScrollbarEnabled: true
+    property bool mouseEnabled: true
     property var gamesModel
     property string collectionName: "All games"
     property color bgFallbackColor: "#2a2d32"
@@ -18,14 +17,8 @@ Item {
     property color colorTextMuted: "#92ffffff"
     property color colorTextInactive: "#d0d0d0"
     property color colorTextPlaceholder: "#f0f0f0"
-    property color colorTextPlaceholderMeta: "#bdbdbd"
     property color colorTextSort: "#92ffffff"
-    property color colorTextHints: "#cfcfcf"
     property color colorCardBase: "#161616"
-    property color colorPanelHints: "#4a000000"
-    property color colorBorderHints: "#18ffffff"
-    property var controllerHintItems: []
-
     property int sortMode: 0
     property bool sortAscending: false
 
@@ -36,40 +29,41 @@ Item {
     property var secondaryTextFn
     property var metaTextFn
 
-    readonly property int currentIndex: layoutMode === 0 ? rowView.currentIndex : gridView.currentIndex
-    readonly property var currentGame: layoutMode === 0
-        ? (rowView.currentItem ? rowView.currentItem.gameObj : null)
-        : (gridView.currentItem ? gridView.currentItem.gameObj : null)
-    readonly property var currentLaunchVisual: layoutMode === 0
-        ? (rowView.currentItem ? rowView.currentItem.launchVisual : null)
+    readonly property int currentIndex: gridView.currentIndex
+    readonly property var currentGame: modelGame(currentIndex)
+    readonly property var currentLaunchVisual: currentIndex >= 0 && gridView.itemAtIndex(currentIndex)
+        ? gridView.itemAtIndex(currentIndex).launchVisual
         : (gridView.currentItem ? gridView.currentItem.launchVisual : null)
-    readonly property real currentLaunchFallbackWidth: layoutMode === 0 ? rowView.coverW : Math.round(gridView.cellWidth * 0.86)
-    readonly property real currentLaunchFallbackHeight: layoutMode === 0 ? rowView.coverH : Math.round(gridView.cellHeight * 0.86)
+    readonly property real currentLaunchFallbackWidth: Math.round(gridView.posterWidth)
+    readonly property real currentLaunchFallbackHeight: Math.round(gridView.posterHeight)
 
     signal navigateRequested()
     signal launchRequested()
     signal focusRequested()
+    signal cycleCollectionRequested(int step)
+    signal cycleSortRequested()
+    signal optionsRequested()
 
     function setCurrentIndex(index) {
         var next = Math.max(0, Math.min(index, Math.max(0, gamesModel ? gamesModel.count - 1 : 0)))
         var previous = currentIndex
-        if (layoutMode === 0)
-            rowView.currentIndex = next
-        else
-            gridView.currentIndex = next
+        gridView.currentIndex = next
         return next !== previous
     }
 
-    function moveSelection(dx, dy) {
-        if (layoutMode === 0)
-            return setCurrentIndex(currentIndex + dx)
+    function modelGame(index) {
+        if (gamesModel && gamesModel.count > index && index >= 0 && gamesModel.get)
+            return gamesModel.get(index)
 
+        return gridView.currentItem ? gridView.currentItem.gameObj : null
+    }
+
+    function moveSelection(dx, dy) {
         var cols = Math.max(1, gridView.columns)
-        return setCurrentIndex(currentIndex + dx + dy * cols)
+        return setCurrentIndex(gridView.currentIndex + dx + dy * cols)
     }
 
     function resetIndexes() {
-        rowView.currentIndex = 0
         gridView.currentIndex = 0
     }
 
@@ -82,11 +76,13 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: Math.max(topBlock.height, sortBadgeWrap.height)
+        height: Math.max(topBlock.height, headerActions.height)
 
         UI.TopInfoPanel {
             id: topBlock
-            width: parent.width
+            anchors.left: parent.left
+            anchors.right: headerActions.left
+            anchors.rightMargin: 8
             height: implicitHeight
             titleValue: root.currentGame ? root.currentGame.title : "No games"
             secondaryValue: secondaryTextFn ? secondaryTextFn(root.currentGame) : ""
@@ -96,95 +92,78 @@ Item {
             metaColor: colorTextMuted
             condensedFontFamily: root.condensedFontFamily
             sansFontFamily: root.sansFontFamily
-            rootHeight: root.height
+            titlePixelSize: 48
+            secondaryPixelSize: 22
+            metaPixelSize: 18
         }
 
-        UI.SortBadge {
-            id: sortBadgeWrap
-            anchors.top: parent.top
-            anchors.right: parent.right
-            width: implicitWidth
-            height: implicitHeight
-            textColor: colorTextSort
-            fontFamily: root.sansFontFamily
-            textPixelSize: Math.round(root.height * 0.018)
-            prefixText: root.collectionName + "  •"
-            valueText: ThemeSort.displayName(sortMode, sortAscending)
-            iconSource: ThemeSort.iconSource(sortMode)
-            iconScale: ThemeSort.iconScale(sortMode)
-        }
-    }
+        Row {
+            id: headerActions
+            x: parent.width - width
+            y: Math.round(topBlock.titleVerticalCenter - height * 0.5)
+            spacing: 10
+            height: sortBadgeWrap.height
 
-    ListView {
-        id: rowView
-        visible: layoutMode === 0
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: headerBlock.bottom
-        anchors.topMargin: root.height * 0.045
-        anchors.bottom: bottomBlock.top
-
-        model: gamesModel
-        orientation: ListView.Horizontal
-        spacing: Math.round(root.width * 0.016)
-        clip: false
-        snapMode: ListView.SnapToItem
-        highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: width * 0.5 - coverW * 0.5
-        preferredHighlightEnd: width * 0.5 - coverW * 0.5
-        highlightMoveDuration: 150
-        interactive: false
-        boundsBehavior: Flickable.StopAtBounds
-        currentIndex: 0
-
-        property real coverW: Math.round(root.height * 0.34)
-        property real coverH: Math.round(coverW * 1.5)
-
-        delegate: UI.RowGameCard {
-            width: rowView.coverW
-            height: rowView.coverH
-            gameObj: modelData
-            posterSource: coverSourceFn ? coverSourceFn(modelData) : ""
-            selected: ListView.isCurrentItem
-            cardBaseColor: colorCardBase
-            fallbackBackgroundColor: bgFallbackColor
-            placeholderTextColor: colorTextPlaceholder
-            placeholderMetaColor: colorTextPlaceholderMeta
-            condensedFontFamily: root.condensedFontFamily
-            sansFontFamily: root.sansFontFamily
-            titlePixelSize: Math.round(root.height * 0.03)
-            metaPixelSize: Math.round(root.height * 0.018)
-
-            onClicked: {
-                if (rowView.currentIndex !== index) {
-                    rowView.currentIndex = index
-                    root.navigateRequested()
-                }
-                root.focusRequested()
+            UI.SortBadge {
+                id: sortBadgeWrap
+                width: implicitWidth
+                height: implicitHeight
+                textColor: colorTextSort
+                fontFamily: root.sansFontFamily
+                textPixelSize: 17
+                prefixText: root.collectionName
+                valueText: ThemeSort.displayName(sortMode, sortAscending)
+                iconSource: ThemeSort.iconSource(sortMode)
+                iconScale: ThemeSort.iconScale(sortMode)
+                mouseEnabled: root.mouseEnabled
+                onPrefixClicked: root.cycleCollectionRequested(1)
+                onSortClicked: root.cycleSortRequested()
             }
-            onLaunchRequested: root.launchRequested()
-        }
-    }
 
-    UI.GameListScrollbar {
-        visible: layoutMode === 0 && gameListScrollbarEnabled && rowView.contentWidth > rowView.width
-        anchors.horizontalCenter: rowView.horizontalCenter
-        anchors.top: rowView.bottom
-        anchors.topMargin: Math.round(root.height * 0.018)
-        width: Math.min(rowView.width * 0.42, Math.round(root.height * 0.40))
-        height: 6
-        vertical: false
-        normalizedPosition: gamesModel && gamesModel.count > 1 ? rowView.currentIndex / Math.max(1, gamesModel.count - 1) : 0
-        thumbRatio: Math.max(1, rowView.width / Math.max(1, rowView.coverW + rowView.spacing)) / Math.max(1, gamesModel ? gamesModel.count : 0)
-        minThumbSize: 32
+            Item {
+                id: settingsButton
+                anchors.verticalCenter: parent.verticalCenter
+                width: sortBadgeWrap.height
+                height: width
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 6
+                    color: settingsMouse.containsMouse ? "#18ffffff" : "transparent"
+                    border.width: 1
+                    border.color: settingsMouse.containsMouse ? "#30ffffff" : "transparent"
+                }
+
+                Image {
+                    anchors.centerIn: parent
+                    source: "../assets/ui/cog.svg"
+                    width: Math.round(parent.width * 0.48)
+                    height: width
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    asynchronous: true
+                    opacity: settingsMouse.containsMouse ? 1.0 : 0.82
+                }
+
+                MouseArea {
+                    id: settingsMouse
+                    anchors.fill: parent
+                    enabled: root.mouseEnabled
+                    hoverEnabled: root.mouseEnabled
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: if (root.mouseEnabled) root.optionsRequested()
+                }
+            }
+        }
     }
 
     Item {
         id: gridFadeArea
-        visible: layoutMode === 1
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: headerBlock.bottom
+        anchors.topMargin: 18
         anchors.bottom: parent.bottom
         readonly property real fadeInset: root.height * 0.045
         layer.enabled: visible
@@ -219,6 +198,7 @@ Item {
             id: gridView
             anchors.left: parent.left
             anchors.right: parent.right
+            anchors.rightMargin: 52
             anchors.top: parent.top
             anchors.topMargin: gridFadeArea.fadeInset
             anchors.bottom: parent.bottom
@@ -226,12 +206,20 @@ Item {
             model: gamesModel
             clip: false
             flow: GridView.FlowLeftToRight
-            cellWidth: Math.round(root.width * 0.15)
-            cellHeight: Math.round(cellWidth * 1.62)
-            interactive: false
+            cellWidth: Math.max(210, Math.min(285, Math.floor(width / 5)))
+            cellHeight: Math.round(posterHeight + rowGutter)
+            interactive: root.mouseEnabled
             boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+            maximumFlickVelocity: 3200
+            flickDeceleration: 4200
+            highlightMoveDuration: 120
             currentIndex: 0
+            bottomMargin: 36
 
+            readonly property real posterWidth: cellWidth * 0.90
+            readonly property real posterHeight: posterWidth * 1.5
+            readonly property real rowGutter: 70
             readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
 
             delegate: UI.GridGameCard {
@@ -246,76 +234,42 @@ Item {
                 inactiveTextColor: colorTextInactive
                 condensedFontFamily: root.condensedFontFamily
                 sansFontFamily: root.sansFontFamily
-                posterTitlePixelSize: Math.round(root.height * 0.024)
-                labelPixelSize: Math.round(root.height * 0.017)
+                posterTitlePixelSize: 26
+                labelPixelSize: 18
+                mouseEnabled: root.mouseEnabled
 
                 onClicked: {
-                    if (gridView.currentIndex !== index) {
-                        gridView.currentIndex = index
-                        root.navigateRequested()
-                    }
+                    if (!root.mouseEnabled)
+                        return
+                    var previousY = gridView.contentY
+                    gridView.currentIndex = index
+                    gridView.contentY = previousY
+                    root.navigateRequested()
                     root.focusRequested()
                 }
-                onLaunchRequested: root.launchRequested()
+                onLaunchRequested: {
+                    root.focusRequested()
+                    root.launchRequested()
+                }
             }
 
-            highlightRangeMode: GridView.StrictlyEnforceRange
-            preferredHighlightBegin: 0
-            preferredHighlightEnd: height - Math.round(parent.width * 0.07)
+            highlightRangeMode: GridView.NoHighlightRange
         }
 
-        UI.GameListScrollbar {
-            visible: gameListScrollbarEnabled && gridView.contentHeight > gridView.height
-            anchors.right: parent.right
-            anchors.rightMargin: Math.round(root.width * 0.01)
-            anchors.verticalCenter: parent.verticalCenter
-            width: 6
-            height: Math.min(parent.height * 0.50, Math.round(root.height * 0.40))
-            vertical: true
-            normalizedPosition: {
-                var totalRows = Math.ceil(Math.max(1, gamesModel ? gamesModel.count : 0) / Math.max(1, gridView.columns))
-                var currentRow = Math.floor(gridView.currentIndex / Math.max(1, gridView.columns))
-                return totalRows > 1 ? currentRow / Math.max(1, totalRows - 1) : 0
-            }
-            thumbRatio: (Math.max(1, gridView.height / Math.max(1, gridView.cellHeight)) * gridView.columns) / Math.max(1, gamesModel ? gamesModel.count : 0)
-            minThumbSize: 28
-        }
     }
 
-    Item {
-        id: bottomBlock
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: Math.round(parent.width * 0.035)
-        height: layoutMode === 0 ? (showHints ? root.height * 0.16 : 0) : (showHints ? root.height * 0.055 : 0)
-        visible: showHints || layoutMode === 0
-
-        UI.SummaryBlock {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            width: parent.width * 0.62
-            visible: layoutMode === 0 && summaryText !== ""
-            summaryText: root.currentGame && root.currentGame.summary ? root.currentGame.summary : ""
-            textColor: colorTextSecondary
-            fontFamily: root.sansFontFamily
-            rootHeight: root.height
-        }
-
-        UI.HintBar {
-            visible: showHints
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            height: root.height * 0.055
-            hintItems: controllerHintItems
-            extraWidth: Math.round(root.width * 0.04)
-            panelColor: colorPanelHints
-            borderColor: colorBorderHints
-            textColor: colorTextHints
-            fontFamily: root.sansFontFamily
-            textPixelSize: Math.round(root.height * 0.017)
-            iconPixelSize: Math.round(root.height * 0.026)
-        }
+    UI.GameListScrollbar {
+        visible: gameListScrollbarEnabled && gridView.contentHeight > gridView.height
+        x: gridFadeArea.width - Math.round(root.anchors.rightMargin * 0.28) - width * 0.5
+        anchors.verticalCenter: gridFadeArea.verticalCenter
+        width: 6
+        height: Math.min(gridFadeArea.height * 0.50, Math.round(root.height * 0.40))
+        vertical: true
+        normalizedPosition: gridView.visibleArea.heightRatio < 1.0
+            ? gridView.visibleArea.yPosition / Math.max(0.001, 1.0 - gridView.visibleArea.heightRatio)
+            : 0
+        thumbRatio: gridView.visibleArea.heightRatio
+        minThumbSize: 28
     }
+
 }

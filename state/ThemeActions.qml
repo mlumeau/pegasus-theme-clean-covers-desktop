@@ -54,14 +54,6 @@ QtObject {
         motionController.restart()
     }
 
-    function cycleLayout(step) {
-        var oldIndex = currentIndex()
-        state.layoutMode = (state.layoutMode + step + ThemeOptions.layoutNames.length) % ThemeOptions.layoutNames.length
-        browser.setCurrentIndex(oldIndex)
-        audio.playLayout()
-        saveSettings()
-    }
-
     function cycleFallbackColor(step) {
         state.bgFallbackColor = ThemeOptions.nextFallbackColor(state.bgFallbackColor, state.fallbackColors, step)
         audio.playAdjust()
@@ -93,12 +85,6 @@ QtObject {
             motionController.restart()
         else
             motionController.stop()
-        saveSettings()
-    }
-
-    function toggleHints() {
-        state.showHints = !state.showHints
-        audio.playAdjust()
         saveSettings()
     }
 

@@ -95,16 +95,34 @@ function formatDurationSeconds(totalSeconds) {
     return Math.floor(s) + "s"
 }
 
+function sourceField(game, fieldName) {
+    if (!game || !game.files)
+        return undefined
+
+    if (hasValue(game.files[fieldName]))
+        return game.files[fieldName]
+
+    if (game.files.count && game.files.count > 0 && game.files.get) {
+        var file = game.files.get(0)
+        if (file && hasValue(file[fieldName]))
+            return file[fieldName]
+    }
+
+    return undefined
+}
+
 function metaText(game) {
     if (!game)
         return ""
 
     var parts = []
-    var playTimeText = formatDurationSeconds(game.playTime)
+    var sourcePlayTime = sourceField(game, "playTime")
+    var playTimeText = formatDurationSeconds(hasValue(sourcePlayTime) ? sourcePlayTime : game.playTime)
     if (playTimeText !== "")
         parts.push("Playtime: " + playTimeText)
 
-    var lastPlayedText = formatDateShort(game.lastPlayed)
+    var sourceLastPlayed = sourceField(game, "lastPlayed")
+    var lastPlayedText = formatDateShort(hasValue(sourceLastPlayed) ? sourceLastPlayed : game.lastPlayed)
     if (lastPlayedText !== "")
         parts.push("Last played: " + lastPlayedText)
 

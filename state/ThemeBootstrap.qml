@@ -9,7 +9,7 @@ QtObject {
 
     function initialize() {
         state.load(memory)
-        browser.resetIndexes()
+        Qt.callLater(browser.resetIndexes)
         if (state.bgMotionEnabled)
             motionController.restart()
         state.acceptReady = true
