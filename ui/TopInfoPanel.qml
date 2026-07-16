@@ -3,16 +3,9 @@ import QtGraphicalEffects 1.15
 
 Column {
     property string titleValue: ""
-    property string secondaryValue: ""
-    property string metaValue: ""
     property color titleColor: "white"
-    property color secondaryColor: "#d8d8d8"
-    property color metaColor: "#92ffffff"
     property string condensedFontFamily: ""
-    property string sansFontFamily: ""
     property int titlePixelSize: 60
-    property int secondaryPixelSize: 22
-    property int metaPixelSize: 18
     readonly property real titleVerticalCenter: titleItem.y + titleItem.height * 0.5
 
     spacing: 0
@@ -42,57 +35,4 @@ Column {
         }
     }
 
-    Item {
-        width: parent.width
-        height: metaItem.height
-
-        DropShadow {
-            visible: metaItem.text !== ""
-            anchors.fill: metaItem
-            source: metaItem
-            horizontalOffset: 0
-            verticalOffset: 2
-            radius: 5
-            samples: 11
-            color: "#38000000"
-        }
-
-        Text {
-            id: metaItem
-            visible: text !== ""
-            text: parent.parent.metaValue
-            color: parent.parent.metaColor
-            font.family: parent.parent.sansFontFamily
-            font.pixelSize: parent.parent.metaPixelSize
-            elide: Text.ElideRight
-            width: parent.width
-            height: parent.parent.metaPixelSize + 2
-        }
-    }
-
-    Item {
-        width: parent.width
-        height: secondaryItem.text !== "" ? secondaryItem.height : 0
-        visible: secondaryItem.text !== ""
-
-        DropShadow {
-            anchors.fill: secondaryItem
-            source: secondaryItem
-            horizontalOffset: 0
-            verticalOffset: 2
-            radius: 5
-            samples: 11
-            color: "#48000000"
-        }
-
-        Text {
-            id: secondaryItem
-            text: parent.parent.secondaryValue
-            color: parent.parent.secondaryColor
-            font.family: parent.parent.sansFontFamily
-            font.pixelSize: parent.parent.secondaryPixelSize
-            elide: Text.ElideRight
-            width: parent.width
-        }
-    }
 }

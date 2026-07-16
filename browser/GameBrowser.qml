@@ -26,9 +26,6 @@ Item {
     property string sansFontFamily: ""
 
     property var coverSourceFn
-    property var secondaryTextFn
-    property var metaTextFn
-
     readonly property int currentIndex: gridView.currentIndex
     readonly property var currentGame: modelGame(currentIndex)
     readonly property var currentLaunchVisual: currentIndex >= 0 && gridView.itemAtIndex(currentIndex)
@@ -85,16 +82,9 @@ Item {
             anchors.rightMargin: 8
             height: implicitHeight
             titleValue: root.currentGame ? root.currentGame.title : "No games"
-            secondaryValue: secondaryTextFn ? secondaryTextFn(root.currentGame) : ""
-            metaValue: metaTextFn ? metaTextFn(root.currentGame) : ""
             titleColor: colorTextPrimary
-            secondaryColor: colorTextSecondary
-            metaColor: colorTextMuted
             condensedFontFamily: root.condensedFontFamily
-            sansFontFamily: root.sansFontFamily
             titlePixelSize: 48
-            secondaryPixelSize: 22
-            metaPixelSize: 18
         }
 
         Row {
