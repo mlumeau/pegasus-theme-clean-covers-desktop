@@ -3,9 +3,13 @@ import QtGraphicalEffects 1.15
 
 Column {
     property string titleValue: ""
+    property string metaValue: ""
     property color titleColor: "white"
+    property color metaColor: "#92ffffff"
     property string condensedFontFamily: ""
+    property string sansFontFamily: ""
     property int titlePixelSize: 60
+    property int metaPixelSize: 18
     readonly property real titleVerticalCenter: titleItem.y + titleItem.height * 0.5
 
     spacing: 0
@@ -32,6 +36,34 @@ Column {
             font.pixelSize: parent.parent.titlePixelSize
             elide: Text.ElideRight
             width: parent.width
+        }
+    }
+
+    Item {
+        width: parent.width
+        height: metaItem.height
+
+        DropShadow {
+            visible: metaItem.text !== ""
+            anchors.fill: metaItem
+            source: metaItem
+            horizontalOffset: 0
+            verticalOffset: 2
+            radius: 5
+            samples: 11
+            color: "#38000000"
+        }
+
+        Text {
+            id: metaItem
+            visible: text !== ""
+            text: parent.parent.metaValue
+            color: parent.parent.metaColor
+            font.family: parent.parent.sansFontFamily
+            font.pixelSize: parent.parent.metaPixelSize
+            elide: Text.ElideRight
+            width: parent.width
+            height: parent.parent.metaPixelSize + 2
         }
     }
 

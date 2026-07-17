@@ -127,6 +127,7 @@ FocusScope {
         condensedFontFamily: global.fonts.condensed
         sansFontFamily: global.fonts.sans
         coverSourceFn: ThemeHelpers.coverSource
+        metaTextFn: ThemeHelpers.metaText
         onNavigateRequested: audio.playNav()
         onLaunchRequested: actions.launchCurrent()
         onFocusRequested: root.forceActiveFocus()
