@@ -115,7 +115,7 @@ Item {
             return
         }
 
-        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+        if (api.keys.isAccept(event) || event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Select) {
             event.accepted = true
             if (launchAnimating || optionsOpen)
                 return
