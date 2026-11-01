@@ -63,6 +63,7 @@ FocusScope {
     }
 
     State.ThemeActions {
+        shortcutInput: shortcutInput
         id: actions
         state: state
         browser: browser
@@ -162,6 +163,7 @@ FocusScope {
     }
 
     Controllers.InputRouter {
+        id: shortcutInput
         anchors.fill: parent
         focus: true
         optionsOpen: optionsController.open

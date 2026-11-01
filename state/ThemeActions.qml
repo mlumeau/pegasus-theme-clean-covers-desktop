@@ -99,6 +99,8 @@ QtObject {
         saveSettings()
     }
 
+    property var shortcutInput
+
     function launchCurrent() {
         var game = browser.currentGame
         var sourceItem = browser.currentLaunchVisual
@@ -108,7 +110,7 @@ QtObject {
         state.acceptReady = false
         audio.playLaunch()
         saveSettings()
-        launchController.startLaunch(game, sourceItem, browser.currentLaunchFallbackWidth, browser.currentLaunchFallbackHeight)
+        launchController.startLaunch(game, sourceItem, browser.currentLaunchFallbackWidth, browser.currentLaunchFallbackHeight, shortcutInput ? shortcutInput.mangoHeld : false)
     }
 
     function moveSelection(dx, dy, optionsOpen) {

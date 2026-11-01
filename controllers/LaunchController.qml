@@ -7,7 +7,17 @@ Item {
     property bool blocked: false
     property bool animating: false
     property var pendingGame: null
+    property bool pendingMangoHud: false
     property var allGamesModel: null
+
+    function prepareLaunch(game) {
+        // Pegasus persists theme memory as it unloads the theme to launch the game.
+        api.memory.set("mangohudLaunch", {
+            title: game.title,
+            requestedAt: Date.now(),
+            enabled: pendingMangoHud
+        })
+    }
 
     readonly property alias sourceHidden: animationLayer.sourceHidden
 
@@ -48,15 +58,18 @@ Item {
 
     function launchPendingGame() {
         var game = originalGameFor(pendingGame)
-        if (game)
+        if (game) {
+            prepareLaunch(game)
             game.launch()
+        }
     }
 
-    function startLaunch(game, sourceItem, fallbackWidth, fallbackHeight) {
+    function startLaunch(game, sourceItem, fallbackWidth, fallbackHeight, mangoHud) {
         if (!game)
             return
 
         blocked = true
+        pendingMangoHud = mangoHud === true
         pendingGame = game
         animating = true
         animationLayer.sourceHidden = false
@@ -76,6 +89,7 @@ Item {
     function reset() {
         animating = false
         pendingGame = null
+        pendingMangoHud = false
         animationLayer.sourceHidden = false
         animationLayer.clearSource()
         animationLayer.coverOpacity = 0.0

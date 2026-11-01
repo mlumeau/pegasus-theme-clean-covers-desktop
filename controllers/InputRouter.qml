@@ -13,9 +13,20 @@ Item {
     signal optionMoveRequested(int step)
     signal optionAdjustRequested(int step)
     signal selectionMoveRequested(int dx, int dy)
+    property bool shiftHeld: false
+    readonly property bool mangoHeld: shiftHeld
+
     signal launchRequested()
 
+    onActiveFocusChanged: { if (!activeFocus) shiftHeld = false }
+
     Keys.onPressed: {
+        if (event.key === Qt.Key_Shift) {
+            shiftHeld = true
+            event.accepted = true
+            return
+        }
+
         if (launchAnimating) {
             event.accepted = true
             return
@@ -98,11 +109,18 @@ Item {
     }
 
     Keys.onReleased: {
+        if (event.key === Qt.Key_Shift) {
+            if (!event.isAutoRepeat) shiftHeld = false
+            event.accepted = true
+            return
+        }
+
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             event.accepted = true
             if (launchAnimating || optionsOpen)
                 return
 
+            if (event.isAutoRepeat) return
             launchRequested()
             return
         }
